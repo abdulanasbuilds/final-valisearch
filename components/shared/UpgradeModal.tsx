@@ -1,78 +1,127 @@
-import { useNavigate } from '@tanstack/react-router'
 import * as Dialog from '@radix-ui/react-dialog'
-import { X, Zap, ArrowRight } from 'lucide-react'
+import { Check, X } from 'lucide-react'
+import { useAuth } from '@/components/auth/AuthProvider' // Assuming AuthProvider exists to get user details
 
 interface UpgradeModalProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  credits: number
+  isOpen: boolean
+  onClose: () => void
+  trigger: 'no_credits' | 'feature_gate' | 'trial_ended'
+  featureName?: string
 }
 
-export function UpgradeModal({ open, onOpenChange, credits }: UpgradeModalProps) {
-  const navigate = useNavigate()
+const PLANS = [
+  {
+    id: 'pro',
+    name: 'Pro',
+    price: '$29',
+    period: '/mo',
+    benefit: '50 analyses & advanced tools',
+    variantId: import.meta.env.VITE_LS_VARIANT_PRO || '12345',
+  },
+  {
+    id: 'business',
+    name: 'Business',
+    price: '$79',
+    period: '/mo',
+    benefit: '250 analyses & team access',
+    variantId: import.meta.env.VITE_LS_VARIANT_BUSINESS || '12346',
+  },
+  {
+    id: 'enterprise',
+    name: 'Enterprise',
+    price: '$199',
+    period: '/mo',
+    benefit: 'Unlimited & custom agents',
+    variantId: import.meta.env.VITE_LS_VARIANT_ENTERPRISE || '12347',
+  },
+]
+
+export function UpgradeModal({ isOpen, onClose, trigger, featureName }: UpgradeModalProps) {
+  const { session } = useAuth()
+  const userEmail = session?.user?.email || ''
+  const userId = session?.user?.id || ''
+
+  const getHeader = () => {
+    switch (trigger) {
+      case 'no_credits': return "You've used all your analyses"
+      case 'feature_gate': return `Unlock ${featureName || 'advanced features'}`
+      case 'trial_ended': return "Your trial has ended"
+      default: return "Upgrade your plan"
+    }
+  }
+
+  const getSubtext = () => {
+    switch (trigger) {
+      case 'no_credits': return "Upgrade to get 50 more analyses + real web research"
+      case 'feature_gate': return "This feature is available on Pro and above"
+      case 'trial_ended': return "Upgrade to keep full access to all features"
+      default: return "Choose the plan that fits your needs"
+    }
+  }
+
+  const handleCheckout = (variantId: string) => {
+    const storeUrl = import.meta.env.VITE_LS_STORE_URL || 'https://store.valisearch.app'
+    const url = new URL(`${storeUrl}/checkout/buy/${variantId}`)
+    url.searchParams.set('checkout[email]', userEmail)
+    url.searchParams.set('checkout[custom][user_id]', userId)
+    window.location.href = url.toString()
+  }
 
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+    <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-[#E5E7EB] bg-white p-6 shadow-xl focus:outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]">
-          {/* Close button */}
-          <Dialog.Close className="absolute right-4 top-4 rounded-md p-1 text-gray-400 hover:text-gray-600 transition-colors">
-            <X className="h-5 w-5" />
-          </Dialog.Close>
-
-          {/* Icon */}
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50">
-            <Zap className="h-7 w-7 text-amber-600" />
-          </div>
-
-          <Dialog.Title className="text-center text-xl font-bold text-[#0C0D0E]">
-            Upgrade your plan
-          </Dialog.Title>
-
-          <Dialog.Description className="mt-2 text-center text-sm text-[#52565E]">
-            You have <span className="font-semibold text-[#0C0D0E]">{credits} credits</span> remaining.
-            Upgrade to Pro for 100 credits per month and access to premium AI models.
-          </Dialog.Description>
-
-          {/* Plan comparison */}
-          <div className="mt-5 space-y-2">
-            <div className="flex items-center justify-between rounded-xl border border-[#E5E7EB] bg-gray-50 px-4 py-3">
-              <div>
-                <p className="text-sm font-medium text-[#52565E]">Starter</p>
-                <p className="text-xs text-[#52565E]">6 credits &middot; Basic models</p>
-              </div>
-              <span className="text-sm font-semibold text-[#52565E]">Free</span>
-            </div>
-            <div className="flex items-center justify-between rounded-xl border-2 border-[#1B4FFF] bg-[#1B4FFF]/5 px-4 py-3">
-              <div>
-                <p className="text-sm font-semibold text-[#1B4FFF]">Pro</p>
-                <p className="text-xs text-[#52565E]">100 credits &middot; Claude Sonnet</p>
-              </div>
-              <span className="text-sm font-bold text-[#1B4FFF]">$29/mo</span>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className="mt-6 flex flex-col gap-2">
-            <button
-              id="upgrade-cta"
-              type="button"
-              onClick={() => {
-                onOpenChange(false)
-                navigate({ to: '/settings/billing' })
-              }}
-              className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-[#1B4FFF] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1640D6]"
-            >
-              Upgrade to Pro
-              <ArrowRight className="h-4 w-4" />
-            </button>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+        <Dialog.Content className="fixed left-[50%] top-[50%] z-50 w-full max-w-2xl translate-x-[-50%] translate-y-[-50%] rounded-2xl bg-white p-8 shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95">
+          <div className="absolute right-4 top-4">
             <Dialog.Close asChild>
               <button
-                type="button"
-                className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl border border-[#E5E7EB] px-4 py-3 text-sm font-medium text-[#52565E] transition-colors hover:bg-gray-50"
+                className="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:outline-none"
+                aria-label="Close"
               >
-                Maybe later
+                <X className="h-5 w-5" />
+              </button>
+            </Dialog.Close>
+          </div>
+
+          <div className="mb-8 text-center">
+            <Dialog.Title className="text-2xl font-black text-[#0C0D0E]">
+              {getHeader()}
+            </Dialog.Title>
+            <Dialog.Description className="mt-2 text-base text-[#52565E]">
+              {getSubtext()}
+            </Dialog.Description>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            {PLANS.map((plan) => (
+              <div key={plan.id} className="flex flex-col rounded-xl border border-[#E5E7EB] p-5 shadow-sm transition-shadow hover:shadow-md">
+                <h4 className="font-bold text-[#0C0D0E]">{plan.name}</h4>
+                <div className="mt-2 mb-4">
+                  <span className="text-2xl font-black text-[#0C0D0E]">{plan.price}</span>
+                  <span className="text-sm text-[#52565E]">{plan.period}</span>
+                </div>
+                <div className="mb-6 flex-1 text-sm text-[#52565E] flex items-start gap-2">
+                  <Check className="h-4 w-4 shrink-0 text-[#16A34A] mt-0.5" />
+                  <span>{plan.benefit}</span>
+                </div>
+                <button
+                  onClick={() => handleCheckout(plan.variantId)}
+                  className={`min-h-[44px] w-full rounded-lg px-4 font-semibold transition-colors ${
+                    plan.id === 'pro' 
+                      ? 'bg-[#1B4FFF] text-white hover:bg-[#1640D6]' 
+                      : 'bg-gray-100 text-[#0C0D0E] hover:bg-gray-200'
+                  }`}
+                >
+                  Choose {plan.name}
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-8 flex justify-center border-t border-[#E5E7EB] pt-6">
+            <Dialog.Close asChild>
+              <button className="text-sm font-semibold text-[#52565E] hover:text-[#0C0D0E]">
+                Stay on free Starter plan →
               </button>
             </Dialog.Close>
           </div>
