@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev --port 3000",
-    "build": "vite build && node -e \"const fs=require('node:fs');fs.rmSync('.output',{recursive:true,force:true});fs.mkdirSync('.output',{recursive:true});fs.cpSync('dist/client','.output/public',{recursive:true});fs.cpSync('dist/server','.output/server',{recursive:true});\"",
+    "build": "vite build && node -e \"const fs=require('node:fs');fs.rmSync('.output',{recursive:true,force:true});fs.mkdirSync('.output',{recursive:true});fs.cpSync('dist/client','.output/public',{recursive:true});fs.cpSync('dist/server','.output/server',{recursive:true});fs.cpSync('dist/server/server.js','.output/public/_worker.js');\"",
     "start": "vite preview --port 3000"
   },
   "dependencies": {
