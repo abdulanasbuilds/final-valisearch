@@ -1,11 +1,11 @@
 import { callModel, selectModel, safeParseJSON } from '../tools/openrouter'
-import { traceAgentCall } from '../tools/langsmith'
+import { traceAgentCall as trace } from '../tools/langsmith'
 import { searchWeb } from '../tools/jina'
 import { googleSearch } from '../tools/serper'
 import type { AgentInput, GrowthOutput } from '../types/analysis'
 
 export async function runGrowthStrategistAgent(input: AgentInput): Promise<GrowthOutput> {
-  return traceAgentCall('GrowthStrategist', async () => {
+  return trace('GrowthStrategist', async () => {
     try {
       // 1. Fetch external data (tool calls)
       const [jinaData, searchData] = await Promise.all([

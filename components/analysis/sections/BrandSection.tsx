@@ -94,11 +94,11 @@ export function BrandSection({ data, isLoading }: BrandSectionProps) {
               style={{ backgroundColor: hex }}
               title="Click to copy hex code"
             >
-              <div className="absolute inset-0 flex flex-col items-center justify-center rounded-2xl bg-black/0 opacity-0 transition-all group-hover:bg-black/20 group-hover:opacity-100">
+              <div className="absolute inset-0 flex flex-col items-center justify-center rounded-2xl bg-white/0 opacity-0 transition-all group-hover:bg-white/75 group-hover:opacity-100">
                 {copiedHex === hex ? (
-                  <span className="rounded bg-black/70 px-2 py-1 text-xs font-bold text-white">Copied!</span>
+                  <span className="rounded bg-white/90 px-2 py-1 text-xs font-bold text-[#0C0D0E]">Copied!</span>
                 ) : (
-                  <div className="flex flex-col items-center gap-1 text-white drop-shadow-md">
+                  <div className="flex flex-col items-center gap-1 text-[#0C0D0E] drop-shadow-sm">
                     <Copy className="h-5 w-5" />
                     <span className="text-xs font-bold">{hex}</span>
                   </div>

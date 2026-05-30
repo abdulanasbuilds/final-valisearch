@@ -1,10 +1,10 @@
 import { callModel, selectModel, safeParseJSON } from '../tools/openrouter'
-import { traceAgentCall } from '../tools/langsmith'
+import { traceAgentCall as trace } from '../tools/langsmith'
 import { searchWeb } from '../tools/jina'
 import type { AgentInput, BrandOutput } from '../types/analysis'
 
 export async function runBrandNamerAgent(input: AgentInput): Promise<BrandOutput> {
-  return traceAgentCall('BrandNamer', async () => {
+  return trace('BrandNamer', async () => {
     try {
       // 1. Fetch external data (tool calls)
       const searchData = await searchWeb(input.idea + ' brand naming strategy')

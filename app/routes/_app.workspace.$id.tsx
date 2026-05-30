@@ -20,6 +20,9 @@ import { ProductSection } from '@/components/analysis/sections/ProductSection'
 import { SynthesisSection } from '@/components/analysis/sections/SynthesisSection'
 
 export const Route = createFileRoute('/_app/workspace/$id')({
+  validateSearch: (search: Record<string, unknown>): { from?: string | undefined } => ({
+    from: typeof search.from === 'string' ? search.from : undefined,
+  }),
   loader: async ({ params }) => {
     return getAnalysisById({ data: { analysisId: params.id } })
   },
@@ -96,7 +99,7 @@ function DashboardPage() {
       case 'scale':
         return <ScaleSection data={resultJson.scale} isLoading={isLoading} />
       case 'product':
-        return <ProductSection data={resultJson.product} isLoading={isLoading} />
+        return <ProductSection data={resultJson.product} isLoading={isLoading} analysisId={analysis.id} />
       case 'synthesis':
         return <SynthesisSection data={resultJson.synthesis} isLoading={isLoading} />
       default:

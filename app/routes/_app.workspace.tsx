@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, useNavigate } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Home,
   PlusCircle,
@@ -19,6 +19,9 @@ import { MobileTabBar } from '@/components/layout/MobileTabBar'
 import type { AnalysisListItem } from '@/components/workspace/AnalysisCard'
 
 export const Route = createFileRoute('/_app/workspace')({
+  validateSearch: (search: Record<string, unknown>): { from?: string | undefined } => ({
+    from: typeof search.from === 'string' ? search.from : undefined,
+  }),
   loader: async () => {
     const data = await getWorkspaceData()
     return data
@@ -59,8 +62,20 @@ const PLAN_COLORS: Record<string, string> = {
 function WorkspacePage() {
   const { analyses, credits, profile } = Route.useLoaderData()
   const { user } = Route.useRouteContext()
+  const { from } = Route.useSearch()
   const navigate = useNavigate()
   const [upgradeOpen, setUpgradeOpen] = useState(false)
+
+  // Auto-submit pending idea after auth callback
+  useEffect(() => {
+    if (from === 'auth') {
+      const pendingIdea = localStorage.getItem('valisearch_pending_idea')
+      if (pendingIdea) {
+        localStorage.removeItem('valisearch_pending_idea')
+        navigate({ to: '/workspace/new', search: { idea: pendingIdea } })
+      }
+    }
+  }, [from])
 
   const plan = profile?.plan ?? 'starter'
   const isTrial = profile?.is_trial_active ?? false
@@ -206,7 +221,7 @@ function WorkspacePage() {
           {analyses.length === 0 ? (
             <EmptyWorkspace />
           ) : (
-            (analyses as AnalysisListItem[]).map((analysis) => (
+            analyses.map((analysis) => (
               <AnalysisCard key={analysis.id} analysis={analysis} />
             ))
           )}

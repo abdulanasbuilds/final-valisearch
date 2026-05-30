@@ -20,6 +20,14 @@ build/
 .svelte-kit/
 .astro/
 
+# Generated route tree files
+app/routeTree.gen.ts
+app/routeTree.gen.d.ts
+app/router.tsx
+
+# Timestamp config files
+app.config.timestamp_*.js
+
 # Environment files
 .env
 .env.local

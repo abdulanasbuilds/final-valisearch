@@ -1,12 +1,12 @@
 import { callModel, selectModel, safeParseJSON } from '../tools/openrouter'
-import { traceAgentCall } from '../tools/langsmith'
+import { traceAgentCall as trace } from '../tools/langsmith'
 import { getRedditSignals } from '../tools/reddit'
 import { getHNSignals } from '../tools/hackernews'
 import { googleSearch } from '../tools/serper'
 import type { AgentInput, ProblemOutput } from '../types/analysis'
 
 export async function runProblemPrioritizerAgent(input: AgentInput): Promise<ProblemOutput> {
-  return traceAgentCall('ProblemPrioritizer', async () => {
+  return trace('ProblemPrioritizer', async () => {
     try {
       // 1. Fetch external data (tool calls)
       const [redditData, hnData, searchData] = await Promise.all([

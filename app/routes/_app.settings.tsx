@@ -8,8 +8,17 @@ export const Route = createFileRoute('/_app/settings')({
 })
 
 function SettingsPage() {
+  type NotificationPrefs = {
+    trial_expiry: boolean
+    weekly_summary: boolean
+    feature_announcements: boolean
+    upgrade_reminders: boolean
+  }
+
+  type SettingsTab = 'profile' | 'security' | 'notifications'
+
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'notifications'>('profile')
+  const [activeTab, setActiveTab] = useState<SettingsTab>('profile')
   const [isSaving, setIsSaving] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
   const [userEmail, setUserEmail] = useState<string | null>(null)
@@ -27,7 +36,7 @@ function SettingsPage() {
   const [isDeleting, setIsDeleting] = useState(false)
 
   // Notifications State
-  const [notifs, setNotifs] = useState({
+  const [notifs, setNotifs] = useState<NotificationPrefs>({
     trial_expiry: true,
     weekly_summary: true,
     feature_announcements: true,
@@ -43,8 +52,21 @@ function SettingsPage() {
         const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
         if (profile) {
           setFullName(profile.full_name || '')
-          if (profile.notification_prefs) {
-            setNotifs(profile.notification_prefs as any)
+          const prefs = profile.notification_prefs
+          if (
+            prefs &&
+            typeof prefs === 'object' &&
+            'trial_expiry' in prefs &&
+            'weekly_summary' in prefs &&
+            'feature_announcements' in prefs &&
+            'upgrade_reminders' in prefs
+          ) {
+            setNotifs({
+              trial_expiry: Boolean(prefs.trial_expiry),
+              weekly_summary: Boolean(prefs.weekly_summary),
+              feature_announcements: Boolean(prefs.feature_announcements),
+              upgrade_reminders: Boolean(prefs.upgrade_reminders),
+            })
           }
         }
       }
@@ -73,8 +95,8 @@ function SettingsPage() {
       alert('Password updated successfully')
       setPassword('')
       setConfirmPassword('')
-    } catch (err: any) {
-      alert(err.message)
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Failed to update password')
     } finally {
       setIsSaving(false)
     }
@@ -88,8 +110,8 @@ function SettingsPage() {
       if (error) throw error
       setEmailMsg('Confirmation sent to new email. Please check your inbox.')
       setNewEmail('')
-    } catch (err: any) {
-      alert(err.message)
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Failed to update email')
     } finally {
       setIsSaving(false)
     }
@@ -103,8 +125,8 @@ function SettingsPage() {
       if (error) throw error
       await supabase.auth.signOut()
       navigate({ to: '/login' })
-    } catch (err: any) {
-      alert(err.message)
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Failed to delete account')
       setIsDeleting(false)
     }
   }
@@ -122,7 +144,7 @@ function SettingsPage() {
     }
   }
 
-  const tabs = [
+  const tabs: Array<{ id: SettingsTab; label: string; icon: typeof User }> = [
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'security', label: 'Security', icon: Lock },
     { id: 'notifications', label: 'Notifications', icon: Bell },
@@ -142,7 +164,7 @@ function SettingsPage() {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
+                  onClick={() => setActiveTab(tab.id)}
                   className={`flex min-h-[44px] items-center gap-3 rounded-lg px-4 text-sm font-medium transition-colors ${
                     isActive
                       ? 'bg-blue-50 text-[#1B4FFF]'

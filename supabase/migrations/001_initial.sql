@@ -254,6 +254,7 @@ CREATE INDEX IF NOT EXISTS idx_analysis_status ON analysis(status);
 CREATE INDEX IF NOT EXISTS idx_ideas_user ON ideas(user_id);
 CREATE INDEX IF NOT EXISTS idx_kb_embedding ON knowledge_base
   USING ivfflat (embedding vector_cosine_ops);
+CREATE INDEX IF NOT EXISTS idx_workspaces_user ON workspaces(user_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_workspace ON tasks(workspace_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_position ON tasks(workspace_id, position);
 CREATE INDEX IF NOT EXISTS idx_chat_msgs_session ON ai_chat_messages(session_id);

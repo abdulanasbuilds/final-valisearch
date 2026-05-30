@@ -1,9 +1,9 @@
 import { callModel, selectModel, safeParseJSON } from '../tools/openrouter'
-import { traceAgentCall } from '../tools/langsmith'
+import { traceAgentCall as trace } from '../tools/langsmith'
 import type { AgentInput, ProductOutput } from '../types/analysis'
 
 export async function runProductManagerAgent(input: AgentInput): Promise<ProductOutput> {
-  return traceAgentCall('ProductManager', async () => {
+  return trace('ProductManager', async () => {
     try {
       // 1. Fetch external data (tool calls)
       const data = ''

@@ -1,17 +1,17 @@
 import { callModel, safeParseJSON, MODELS } from '../tools/openrouter'
-import { traceAgentCall } from '../tools/langsmith'
+import { traceAgentCall as trace } from '../tools/langsmith'
 import type { AgentInput, SynthesisOutput, FullAnalysisOutput } from '../types/analysis'
 
 export async function runSynthesisAgent(
   input: AgentInput,
   agentOutputs: Partial<Omit<FullAnalysisOutput, 'synthesis' | 'metadata'>>
 ): Promise<SynthesisOutput> {
-  return traceAgentCall('Synthesis', async () => {
+  return trace('Synthesis', async () => {
     try {
       const data = JSON.stringify(agentOutputs, null, 2)
 
       const response = await callModel({
-        // CRITICAL: ALWAYS uses MODELS.CLAUDE_SONNET — no exceptions
+        // CRITICAL: ALWAYS uses MODELS.CLAUDE_SONNET â€” no exceptions
         model: MODELS.CLAUDE_SONNET,
         system: `Senior venture investor reviewing all 11 reports. 
 Be ruthlessly honest. If fatal flaws exist, name them.

@@ -6,11 +6,13 @@ import { Layers, Zap, Code2, Plus } from 'lucide-react'
 import { DndContext, DragOverlay, closestCorners, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { saveKanbanTasks } from '@/lib/server/workspace'
 import type { ProductOutput } from '@/agents/types/analysis'
 
 interface ProductSectionProps {
   data: ProductOutput | null
   isLoading?: boolean
+  analysisId?: string
 }
 
 type ColumnType = 'backlog' | 'in_progress' | 'done'
@@ -34,7 +36,7 @@ function SortableTask({ task }: { task: Task }) {
   )
 }
 
-export function ProductSection({ data, isLoading }: ProductSectionProps) {
+export function ProductSection({ data, isLoading, analysisId }: ProductSectionProps) {
   const [activeTab, setActiveTab] = useState<'mvp' | 'sprint'>('mvp')
   
   // Kanban State
@@ -122,17 +124,32 @@ export function ProductSection({ data, isLoading }: ProductSectionProps) {
 
     if (activeId === overId) return
 
+    let updatedTasks = [...tasks]
+
     setTasks((tasks) => {
       const activeIndex = tasks.findIndex((t) => t.id === activeId)
       const overIndex = tasks.findIndex((t) => t.id === overId)
 
       if (tasks[activeIndex] && tasks[overIndex] && tasks[activeIndex].column === tasks[overIndex].column) {
-         return arrayMove(tasks, activeIndex, overIndex)
+        updatedTasks = arrayMove(tasks, activeIndex, overIndex)
+      } else {
+        updatedTasks = tasks
       }
-      return tasks
+      return updatedTasks
     })
-    
-    // In a real app, fire server function here: updateTaskColumn(activeId, newColumn)
+
+    // Persist to Supabase
+    if (analysisId) {
+      const tasksToSave = updatedTasks.map((t, i) => ({
+        id: t.id,
+        title: t.title,
+        column: t.column,
+        position: i,
+      }))
+      saveKanbanTasks({ data: { analysisId, tasks: tasksToSave } }).catch(() => {
+        // Silently fail — local state is already updated
+      })
+    }
   }
 
   const columns: { id: ColumnType; title: string }[] = [

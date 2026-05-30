@@ -1,10 +1,10 @@
 import { callModel, selectModel, safeParseJSON } from '../tools/openrouter'
-import { traceAgentCall } from '../tools/langsmith'
+import { traceAgentCall as trace } from '../tools/langsmith'
 import { getMarketSentiment } from '../tools/financial'
 import type { AgentInput, ScaleOutput } from '../types/analysis'
 
 export async function runScaleArchitectAgent(input: AgentInput): Promise<ScaleOutput> {
-  return traceAgentCall('ScaleArchitect', async () => {
+  return trace('ScaleArchitect', async () => {
     try {
       // 1. Fetch external data (tool calls)
       const sentimentData = await getMarketSentiment(input.idea + ' startup revenue growth')

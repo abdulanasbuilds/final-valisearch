@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, getRouteApi, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Sparkles, Zap, Loader2, ArrowLeft, Clock } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -26,19 +26,24 @@ const AGENT_KEYS = [
 type SearchParams = {
   analysisId?: string | undefined
   idea?: string | undefined
+  from?: string | undefined
 }
 
 export const Route = createFileRoute('/_app/workspace/new')({
   validateSearch: (search: Record<string, unknown>): SearchParams => ({
     analysisId: typeof search.analysisId === 'string' ? search.analysisId : undefined,
     idea: typeof search.idea === 'string' ? search.idea : undefined,
+    from: typeof search.from === 'string' ? search.from : undefined,
   }),
   component: NewAnalysisPage,
 })
 
+const workspaceRouteApi = getRouteApi('/_app/workspace')
+
 function NewAnalysisPage() {
   const { analysisId: initialAnalysisId, idea: initialIdea } = Route.useSearch()
   const { profile } = Route.useRouteContext()
+  const { credits } = workspaceRouteApi.useLoaderData()
   const navigate = useNavigate()
 
   // State
@@ -52,10 +57,6 @@ function NewAnalysisPage() {
   const [submitting, setSubmitting] = useState<AnalysisType | null>(null)
   const [error, setError] = useState('')
   const activityRef = useRef<HTMLDivElement>(null)
-
-  // Credits from parent route context
-  const parentData = Route.useRouteContext() as unknown as { credits?: number }
-  const credits = (parentData as any)?.credits ?? 0
 
   // Auto-scroll activity feed
   useEffect(() => {

@@ -1,12 +1,12 @@
 import { callModel, selectModel, safeParseJSON } from '../tools/openrouter'
-import { traceAgentCall } from '../tools/langsmith'
+import { traceAgentCall as trace } from '../tools/langsmith'
 import { googleSearch } from '../tools/serper'
 import { scrapeCompetitorUrls } from '../tools/firecrawl'
 import { searchWeb } from '../tools/jina'
 import type { AgentInput, CompetitorOutput } from '../types/analysis'
 
 export async function runCompetitorIntelAgent(input: AgentInput): Promise<CompetitorOutput> {
-  return traceAgentCall('CompetitorIntel', async () => {
+  return trace('CompetitorIntel', async () => {
     try {
       // 1. Fetch external data (tool calls)
       const searchData = await googleSearch(input.idea + ' competitors alternatives top companies')

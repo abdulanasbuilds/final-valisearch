@@ -1,11 +1,11 @@
 import { callModel, selectModel, safeParseJSON } from '../tools/openrouter'
-import { traceAgentCall } from '../tools/langsmith'
+import { traceAgentCall as trace } from '../tools/langsmith'
 import { googleSearch, searchNews } from '../tools/serper'
 import { getMarketSentiment, getSectorPerformance } from '../tools/financial'
 import type { AgentInput, MarketOutput } from '../types/analysis'
 
 export async function runMarketResearcherAgent(input: AgentInput): Promise<MarketOutput> {
-  return traceAgentCall('MarketResearcher', async () => {
+  return trace('MarketResearcher', async () => {
     try {
       // 1. Fetch external data (tool calls)
       const [searchData, newsData, sentiment, sector] = await Promise.all([

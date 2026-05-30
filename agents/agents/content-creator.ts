@@ -1,11 +1,11 @@
 import { callModel, selectModel, safeParseJSON } from '../tools/openrouter'
-import { traceAgentCall } from '../tools/langsmith'
+import { traceAgentCall as trace } from '../tools/langsmith'
 import { googleSearch } from '../tools/serper'
 import { getRedditSignals } from '../tools/reddit'
 import type { AgentInput, ContentOutput } from '../types/analysis'
 
 export async function runContentCreatorAgent(input: AgentInput): Promise<ContentOutput> {
-  return traceAgentCall('ContentCreator', async () => {
+  return trace('ContentCreator', async () => {
     try {
       // 1. Fetch external data (tool calls)
       const [searchData, redditData] = await Promise.all([

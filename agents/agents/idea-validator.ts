@@ -1,10 +1,10 @@
 import { callModel, selectModel, safeParseJSON } from '../tools/openrouter'
-import { traceAgentCall } from '../tools/langsmith'
+import { traceAgentCall as trace } from '../tools/langsmith'
 import { googleSearch, searchNews } from '../tools/serper'
 import type { AgentInput, ValidatorOutput } from '../types/analysis'
 
 export async function runIdeaValidatorAgent(input: AgentInput): Promise<ValidatorOutput> {
-  return traceAgentCall('IdeaValidator', async () => {
+  return trace('IdeaValidator', async () => {
     try {
       // 1. Fetch external data (tool calls)
       const [searchData, newsData] = await Promise.all([
