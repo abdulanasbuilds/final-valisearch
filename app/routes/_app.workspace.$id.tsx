@@ -1,10 +1,9 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { useState } from 'react'
-import { ArrowLeft, Download, RotateCcw } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { ArrowLeft, Download, RotateCcw, Loader2 } from 'lucide-react'
 import { getAnalysisById } from '@/lib/server/workspace'
 import { getVerdictColor, getScoreColor, getScoreBg } from '@/lib/utils'
 
-// Sub-components (We will implement these next)
 import { OverviewSection } from '@/components/analysis/sections/OverviewSection'
 import { ValidationSection } from '@/components/analysis/sections/ValidationSection'
 import { MarketSection } from '@/components/analysis/sections/MarketSection'
@@ -18,6 +17,8 @@ import { BrandSection } from '@/components/analysis/sections/BrandSection'
 import { ScaleSection } from '@/components/analysis/sections/ScaleSection'
 import { ProductSection } from '@/components/analysis/sections/ProductSection'
 import { SynthesisSection } from '@/components/analysis/sections/SynthesisSection'
+import { ChatSection } from '@/components/analysis/ChatSection'
+import { SectionSidebar, MobileTabStrip } from '@/components/analysis/SectionSidebar'
 
 export const Route = createFileRoute('/_app/workspace/$id')({
   validateSearch: (search: Record<string, unknown>): { from?: string | undefined } => ({
@@ -67,6 +68,8 @@ function DashboardPage() {
   const analysis = Route.useLoaderData()
   const navigate = useNavigate()
   const [activeSection, setActiveSection] = useState('overview')
+  const [exporting, setExporting] = useState<'pdf' | 'docx' | null>(null)
+  const reportRef = useRef<HTMLDivElement>(null)
 
   const title = analysis.ideas?.idea_text || 'Untitled idea'
   const truncatedTitle = title.length > 50 ? title.substring(0, 50) + '...' : title
@@ -107,6 +110,43 @@ function DashboardPage() {
     }
   }
 
+  const handleExportPDF = async () => {
+    setExporting('pdf')
+    try {
+      const { default: html2canvas } = await import('html2canvas')
+      const el = reportRef.current
+      if (!el) return
+      const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
+      const imgData = canvas.toDataURL('image/png')
+      const printWindow = window.open('', '_blank')
+      if (!printWindow) return
+      printWindow.document.write(`
+        <html><head><title>ValiSearch Report</title>
+        <style>body { margin: 0; padding: 20px; font-family: Inter, sans-serif; } img { width: 100%; }</style>
+        </head><body><img src="${imgData}" onload="window.print()" /></body></html>
+      `)
+      printWindow.document.close()
+    } finally {
+      setExporting(null)
+    }
+  }
+
+  const handleExportDOCX = async () => {
+    setExporting('docx')
+    try {
+      const content = reportRef.current?.innerText ?? 'No content'
+      const blob = new Blob([content], { type: 'application/msword' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `valisearch-report-${analysis.id?.slice(0, 8)}.doc`
+      a.click()
+      URL.revokeObjectURL(url)
+    } finally {
+      setExporting(null)
+    }
+  }
+
   return (
     <div className="flex h-[calc(100vh-80px)] flex-col bg-white">
       {/* Top Bar (Sticky) */}
@@ -135,13 +175,37 @@ function DashboardPage() {
               {verdict}
             </span>
           )}
-          <button
-            type="button"
-            className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm font-medium text-[#52565E] transition-colors hover:bg-gray-50"
-          >
-            <Download className="h-4 w-4" />
-            <span className="hidden sm:inline">Export</span>
-          </button>
+
+          {/* Export Dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                const menu = document.getElementById('export-menu')
+                if (menu) menu.classList.toggle('hidden')
+              }}
+              disabled={!!exporting}
+              className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg border border-[#E5E7EB] px-3 py-2 text-sm font-medium text-[#52565E] transition-colors hover:bg-gray-50"
+            >
+              {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              <span className="hidden sm:inline">{exporting ? 'Exporting...' : 'Export'}</span>
+            </button>
+            <div id="export-menu" className="hidden absolute right-0 top-full mt-1 z-20 w-40 rounded-xl border border-[#E5E7EB] bg-white py-2 shadow-lg">
+              <button
+                onClick={() => { document.getElementById('export-menu')?.classList.add('hidden'); handleExportPDF() }}
+                className="flex min-h-[44px] w-full items-center gap-3 px-4 text-sm text-[#52565E] transition-colors hover:bg-gray-50"
+              >
+                Export as PDF
+              </button>
+              <button
+                onClick={() => { document.getElementById('export-menu')?.classList.add('hidden'); handleExportDOCX() }}
+                className="flex min-h-[44px] w-full items-center gap-3 px-4 text-sm text-[#52565E] transition-colors hover:bg-gray-50"
+              >
+                Export as DOCX
+              </button>
+            </div>
+          </div>
+
           <button
             type="button"
             onClick={() => navigate({ to: '/workspace/new' })}
@@ -155,71 +219,23 @@ function DashboardPage() {
 
       {/* Main Content Area */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Desktop Sidebar */}
-        <aside className="hidden w-56 shrink-0 overflow-y-auto border-r border-[#E5E7EB] bg-gray-50/30 p-4 md:block custom-scrollbar">
-          <nav className="space-y-6">
-            {NAV_GROUPS.map((group) => (
-              <div key={group.label}>
-                <h3 className="mb-2 px-2 text-xs font-bold tracking-wider text-gray-400 uppercase">
-                  {group.label}
-                </h3>
-                <div className="space-y-0.5">
-                  {group.items.map((item) => {
-                    const isActive = activeSection === item.id
-                    return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => setActiveSection(item.id)}
-                        className={`flex min-h-[40px] w-full items-center rounded-r-lg px-2 text-sm transition-colors ${
-                          isActive
-                            ? 'border-l-2 border-[#1B4FFF] bg-blue-50 text-[#1B4FFF] font-semibold'
-                            : 'border-l-2 border-transparent text-[#52565E] hover:bg-gray-100 hover:text-[#0C0D0E] font-medium'
-                        }`}
-                      >
-                        {item.label}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            ))}
-          </nav>
-        </aside>
+        <SectionSidebar groups={NAV_GROUPS} activeSection={activeSection} onSectionChange={setActiveSection} />
 
-        {/* Content & Mobile Tabs */}
         <main className="flex flex-1 flex-col overflow-hidden">
-          {/* Mobile Tab Strip */}
-          <div className="shrink-0 border-b border-[#E5E7EB] bg-white p-2 md:hidden">
-            <div className="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
-              {NAV_GROUPS.flatMap((g) => g.items).map((item) => {
-                const isActive = activeSection === item.id
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setActiveSection(item.id)}
-                    className={`inline-flex min-h-[36px] shrink-0 items-center justify-center rounded-full px-3 text-xs font-medium transition-colors ${
-                      isActive
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'bg-gray-100 text-[#52565E]'
-                    }`}
-                  >
-                    {item.label}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
+          <MobileTabStrip items={NAV_GROUPS.flatMap((g) => g.items)} activeSection={activeSection} onSectionChange={setActiveSection} />
 
-          {/* Active Section Content */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#F9FAFB]">
+          <div ref={reportRef} className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#F9FAFB]">
             <div className="mx-auto max-w-5xl">
               {renderSection()}
             </div>
           </div>
         </main>
       </div>
+
+      {/* AI Co-founder Chat */}
+      {resultJson.synthesis && (
+        <ChatSection analysisId={analysis.id} />
+      )}
     </div>
   )
 }
