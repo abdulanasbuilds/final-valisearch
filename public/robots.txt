@@ -1,0 +1,6 @@
+User-agent: *
+Disallow: /workspace/
+Disallow: /settings/
+Disallow: /onboarding/
+Allow: /
+Sitemap: https://valisearch.app/sitemap.xml
