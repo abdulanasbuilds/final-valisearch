@@ -1,42 +1,39 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { createServerFn } from '@tanstack/start'
-import { createServerClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/client'
 import { Check, ExternalLink, Zap, AlertTriangle } from 'lucide-react'
 import type { Plan } from '@/agents/types/analysis'
 
-export const getBillingData = createServerFn().handler(async () => {
-  const supabase = createServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
-
-  const { data: credits } = await supabase
-    .from('credits')
-    .select('*')
-    .eq('user_id', user.id)
-    .single()
-
-  const { count: analysisCount } = await supabase
-    .from('analysis')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', user.id)
-
-  const { data: subscription } = await supabase
-    .from('subscriptions')
-    .select('*')
-    .eq('user_id', user.id)
-    .single()
-
-  return { profile, credits, subscription, analysisCount: analysisCount || 0 }
-})
-
 export const Route = createFileRoute('/_app/settings/billing')({
-  loader: () => getBillingData(),
+  loader: async () => {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single()
+
+    const { data: credits } = await supabase
+      .from('credits')
+      .select('*')
+      .eq('user_id', user.id)
+      .single()
+
+    const { count: analysisCount } = await supabase
+      .from('analysis')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+
+    const { data: subscription } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', user.id)
+      .single()
+
+    return { profile, credits, subscription, analysisCount: analysisCount || 0 }
+  },
   component: BillingPage,
 })
 

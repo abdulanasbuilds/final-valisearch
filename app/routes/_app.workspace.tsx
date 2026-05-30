@@ -233,9 +233,9 @@ function WorkspacePage() {
 
       {/* Upgrade modal */}
       <UpgradeModal
-        open={upgradeOpen}
-        onOpenChange={setUpgradeOpen}
-        credits={credits}
+        isOpen={upgradeOpen}
+        onClose={() => setUpgradeOpen(false)}
+        trigger="no_credits"
       />
     </div>
   )

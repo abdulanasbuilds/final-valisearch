@@ -1,6 +1,7 @@
+import { useState, useEffect } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { Check, X } from 'lucide-react'
-import { useAuth } from '@/components/auth/AuthProvider' // Assuming AuthProvider exists to get user details
+import { createClient } from '@/lib/supabase/client'
 
 interface UpgradeModalProps {
   isOpen: boolean
@@ -37,9 +38,20 @@ const PLANS = [
 ]
 
 export function UpgradeModal({ isOpen, onClose, trigger, featureName }: UpgradeModalProps) {
-  const { session } = useAuth()
-  const userEmail = session?.user?.email || ''
-  const userId = session?.user?.id || ''
+  const [userEmail, setUserEmail] = useState<string>('')
+  const [userId, setUserId] = useState<string>('')
+
+  useEffect(() => {
+    async function loadUser() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setUserId(user.id)
+        setUserEmail(user.email || '')
+      }
+    }
+    if (isOpen) loadUser()
+  }, [isOpen])
 
   const getHeader = () => {
     switch (trigger) {

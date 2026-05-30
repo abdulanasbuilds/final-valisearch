@@ -1,19 +1,19 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { User, Lock, Bell, AlertTriangle, Loader2 } from 'lucide-react'
-import { supabase } from '@/lib/supabase/client'
-import { useAuth } from '@/components/auth/AuthProvider'
+import { createClient } from '@/lib/supabase/client'
 
 export const Route = createFileRoute('/_app/settings')({
   component: SettingsPage,
 })
 
 function SettingsPage() {
-  const { session, profile, refreshProfile } = useAuth()
   const navigate = useNavigate()
-  
   const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'notifications'>('profile')
   const [isSaving, setIsSaving] = useState(false)
+  const [userId, setUserId] = useState<string | null>(null)
+  const [userEmail, setUserEmail] = useState<string | null>(null)
+  const supabase = createClient()
 
   // Profile State
   const [fullName, setFullName] = useState('')
@@ -35,21 +35,29 @@ function SettingsPage() {
   })
 
   useEffect(() => {
-    if (profile) {
-      setFullName(profile.full_name || '')
-      if (profile.notification_prefs) {
-        setNotifs(profile.notification_prefs as any)
+    async function loadData() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setUserId(user.id)
+        setUserEmail(user.email || null)
+        const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+        if (profile) {
+          setFullName(profile.full_name || '')
+          if (profile.notification_prefs) {
+            setNotifs(profile.notification_prefs as any)
+          }
+        }
       }
     }
-  }, [profile])
+    loadData()
+  }, [])
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!session?.user?.id) return
+    if (!userId) return
     setIsSaving(true)
     try {
-      await supabase.from('profiles').update({ full_name: fullName }).eq('id', session.user.id)
-      await refreshProfile()
+      await supabase.from('profiles').update({ full_name: fullName }).eq('id', userId)
     } finally {
       setIsSaving(false)
     }
@@ -102,14 +110,13 @@ function SettingsPage() {
   }
 
   const handleSaveNotifs = async () => {
-    if (!session?.user?.id) return
+    if (!userId) return
     setIsSaving(true)
     try {
       await supabase
         .from('profiles')
         .update({ notification_prefs: notifs })
-        .eq('id', session.user.id)
-      await refreshProfile()
+        .eq('id', userId)
     } finally {
       setIsSaving(false)
     }
@@ -163,7 +170,7 @@ function SettingsPage() {
                     </label>
                     <input
                       type="email"
-                      value={session?.user?.email || ''}
+                      value={userEmail || ''}
                       disabled
                       className="w-full rounded-lg border border-[#E5E7EB] bg-gray-50 px-4 py-2.5 text-sm text-gray-500 cursor-not-allowed"
                     />
