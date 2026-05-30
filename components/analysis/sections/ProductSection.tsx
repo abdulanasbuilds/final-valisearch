@@ -80,19 +80,31 @@ export function ProductSection({ data, isLoading }: ProductSectionProps) {
       const overIndex = tasks.findIndex((t) => t.id === overId)
       const isOverTask = over.data?.current?.type === 'Task'
       const isOverColumn = over.data?.current?.type === 'Column'
+      const activeTask = tasks[activeIndex]
+      const overTask = tasks[overIndex]
 
-      if (isOverTask && tasks[overIndex]) {
-        if (tasks[activeIndex] && tasks[overIndex] && tasks[activeIndex].column !== tasks[overIndex].column) {
+      if (isOverTask && activeTask && overTask) {
+        if (activeTask.column !== overTask.column) {
           const newTasks = [...tasks]
-          newTasks[activeIndex].column = tasks[overIndex].column
+          const newActiveTask = newTasks[activeIndex]
+          const newOverTask = newTasks[overIndex]
+          
+          if (newActiveTask && newOverTask) {
+             newActiveTask.column = newOverTask.column
+          }
           return arrayMove(newTasks, activeIndex, overIndex)
         }
+
         return arrayMove(tasks, activeIndex, overIndex)
       }
 
-      if (isOverColumn && tasks[activeIndex]) {
+      if (isOverColumn && activeTask) {
         const newTasks = [...tasks]
-        newTasks[activeIndex].column = overId as ColumnType
+        const newActiveTask = newTasks[activeIndex]
+        
+        if (newActiveTask) {
+          newActiveTask.column = overId as ColumnType
+        }
         return arrayMove(newTasks, activeIndex, activeIndex)
       }
 
