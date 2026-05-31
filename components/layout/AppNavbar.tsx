@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { createClient } from '@/lib/supabase/client'
+import { tryCreateClient } from '@/lib/supabase/client'
 import {
   Search, BarChart2, Settings, CreditCard, LogOut, ChevronDown, Menu, X, Sparkles,
 } from 'lucide-react'
@@ -15,7 +15,7 @@ interface AppNavbarProps {
 
 export function AppNavbar({ profile }: AppNavbarProps) {
   const navigate = useNavigate()
-  const supabase = createClient()
+  const supabase = tryCreateClient()
   const [menuOpen, setMenuOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
 
@@ -23,6 +23,10 @@ export function AppNavbar({ profile }: AppNavbarProps) {
   const isTrial = profile?.is_trial_active ?? false
 
   const handleSignOut = async () => {
+    if (!supabase) {
+      navigate({ to: '/login' })
+      return
+    }
     await supabase.auth.signOut()
     navigate({ to: '/login' })
   }

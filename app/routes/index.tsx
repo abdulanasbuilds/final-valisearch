@@ -6,7 +6,7 @@ import {
   ChevronRight, CheckCircle, ArrowRight, BarChart2, Brain,
   Star, Menu, X,
 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { tryCreateClient } from '@/lib/supabase/client'
 import { AGENTS_META } from '@/lib/constants'
 
 export const Route = createFileRoute('/')({
@@ -72,7 +72,8 @@ function LandingPage() {
   const MAX = 2000
 
   useEffect(() => {
-    const supabase = createClient()
+    const supabase = tryCreateClient()
+    if (!supabase) return
     supabase.auth.getSession().then(({ data: { session } }) => {
       setIsAuth(!!session)
     })

@@ -29,10 +29,22 @@ export function createServerSupabaseClient() {
 }
 
 function parseCookieHeader(header: string): Record<string, string> {
-  return Object.fromEntries(
-    header.split(';').map((c) => {
-      const [k, ...v] = c.trim().split('=')
-      return [k?.trim() ?? '', v.join('=')]
-    })
-  )
+  if (!header) return {}
+
+  const out: Record<string, string> = {}
+  for (const part of header.split(';')) {
+    const trimmed = part.trim()
+    if (!trimmed) continue
+
+    const eq = trimmed.indexOf('=')
+    if (eq <= 0) continue
+
+    const key = trimmed.slice(0, eq).trim()
+    if (!key) continue
+
+    const value = trimmed.slice(eq + 1)
+    out[key] = value
+  }
+
+  return out
 }

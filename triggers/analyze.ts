@@ -56,7 +56,7 @@ export const analyzeStartupIdea = task({
         .update({
           status: 'complete',
           overall_score: result.synthesis?.overall_score || 0,
-          verdict: result.synthesis?.verdict || 'no_go',
+          verdict: result.synthesis?.verdict ?? null,
           result_json: result,
           credits_used: creditsUsed,
         })

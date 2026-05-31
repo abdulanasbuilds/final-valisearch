@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { tryCreateClient } from '@/lib/supabase/client'
 import { track } from '@/lib/analytics'
 import { z } from 'zod'
 
@@ -19,7 +19,30 @@ function LoginScreen() {
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const navigate = useNavigate()
-  const supabase = createClient()
+  const supabase = tryCreateClient()
+
+  if (!supabase) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+        <div className="w-full max-w-md space-y-4 bg-white p-8 shadow-sm rounded-xl border border-gray-100">
+          <h2 className="text-center text-2xl font-bold tracking-tight text-gray-900">
+            Setup required
+          </h2>
+          <p className="text-sm text-gray-600 text-center">
+            This app is deployed, but Supabase is not configured yet.
+            Add <strong>VITE_SUPABASE_URL</strong> and <strong>VITE_SUPABASE_ANON_KEY</strong> in Cloudflare, then redeploy.
+          </p>
+          <Link
+            to="/"
+            className="inline-flex min-h-[44px] w-full items-center justify-center rounded-md bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700"
+          >
+            Back to home
+          </Link>
+        </div>
+      </div>
+    )
+  }
+  const sb = supabase
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -32,7 +55,7 @@ function LoginScreen() {
     }
 
     setLoading(true)
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error } = await sb.auth.signInWithPassword({
       email,
       password,
     })

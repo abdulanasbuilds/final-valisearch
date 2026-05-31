@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { tryCreateClient } from '@/lib/supabase/client'
 import { track } from '@/lib/analytics'
 import { z } from 'zod'
 
@@ -25,12 +25,33 @@ function RegisterScreen() {
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const [success, setSuccess] = useState(false)
-  const supabase = createClient()
+  const supabase = tryCreateClient()
 
   useEffect(() => {
     const idea = localStorage.getItem('valisearch_pending_idea')
     if (idea) setPendingIdea(idea)
   }, [])
+
+  if (!supabase) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+        <div className="w-full max-w-md space-y-4 bg-white p-8 shadow-sm rounded-xl border border-gray-100 text-center">
+          <h2 className="text-2xl font-bold tracking-tight text-gray-900">Setup required</h2>
+          <p className="text-sm text-gray-600">
+            This app is deployed, but Supabase is not configured yet.
+            Add <strong>VITE_SUPABASE_URL</strong> and <strong>VITE_SUPABASE_ANON_KEY</strong> in Cloudflare, then redeploy.
+          </p>
+          <Link
+            to="/"
+            className="inline-flex min-h-[44px] w-full items-center justify-center rounded-md bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700"
+          >
+            Back to home
+          </Link>
+        </div>
+      </div>
+    )
+  }
+  const sb = supabase
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault()
@@ -43,7 +64,7 @@ function RegisterScreen() {
     }
 
     setLoading(true)
-    const { error } = await supabase.auth.signUp({
+    const { error } = await sb.auth.signUp({
       email,
       password,
     })

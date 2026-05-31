@@ -55,6 +55,8 @@ export function IdeaInputBox({ credits, onUpgradeNeeded }: IdeaInputBoxProps) {
         setError('Your idea needs to be at least 10 characters long.')
       } else if (msg === 'RATE_LIMIT_EXCEEDED') {
         setError('You are submitting too quickly. Please wait a moment.')
+      } else if (msg === 'SETUP_REQUIRED') {
+        setError('This app is deployed, but it is not fully configured yet. Please add the API keys in Cloudflare and try again.')
       } else {
         setError('Failed to start analysis. Please try again.')
       }

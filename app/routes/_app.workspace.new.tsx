@@ -1,7 +1,7 @@
 import { createFileRoute, getRouteApi, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Sparkles, Zap, Loader2, ArrowLeft, Clock } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { tryCreateClient } from '@/lib/supabase/client'
 import { submitAnalysis } from '@/lib/server/analyze'
 import { AgentStatusCard, AGENT_META } from '@/components/analysis/AgentStatusCard'
 import type { AgentStatus } from '@/components/analysis/AgentStatusCard'
@@ -92,7 +92,8 @@ function NewAnalysisPage() {
   useEffect(() => {
     if (!analysisId) return
 
-    const supabase = createClient()
+    const supabase = tryCreateClient()
+    if (!supabase) return
     const channel = supabase
       .channel(`analysis:${analysisId}`)
       .on('broadcast', { event: 'agent_complete' }, ({ payload }) => {
@@ -176,6 +177,8 @@ function NewAnalysisPage() {
         setError('You are submitting too quickly. Please wait a moment.')
       } else if (msg === 'INSUFFICIENT_CREDITS') {
         setError('Insufficient credits. Please upgrade your plan.')
+      } else if (msg === 'SETUP_REQUIRED') {
+        setError('This app is deployed, but it is not fully configured yet. Please add the API keys in Cloudflare and try again.')
       } else {
         setError('Failed to start analysis. Please try again.')
       }
