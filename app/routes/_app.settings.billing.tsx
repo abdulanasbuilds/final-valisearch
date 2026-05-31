@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { createClient } from '@/lib/supabase/client'
+import { tryCreateClient } from '@/lib/supabase/client'
 import { Check, Zap, AlertTriangle } from 'lucide-react'
 import type { Plan } from '@/agents/types/analysis'
 import { useEffect } from 'react'
@@ -12,7 +12,8 @@ import {
 
 export const Route = createFileRoute('/_app/settings/billing')({
   loader: async () => {
-    const supabase = createClient()
+    const supabase = tryCreateClient()
+    if (!supabase) throw new Error('SUPABASE_NOT_CONFIGURED')
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Not authenticated')
 
@@ -63,7 +64,7 @@ function BillingPage() {
 
       const stripeSessionId = params.get('stripe_session_id')
       if (stripeSessionId) {
-        await finalizeStripeCheckout({ sessionId: stripeSessionId })
+        await finalizeStripeCheckout({ data: { sessionId: stripeSessionId } })
         params.delete('stripe_session_id')
         window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`.replace(/\?$/, ''))
         window.location.reload()
@@ -73,7 +74,7 @@ function BillingPage() {
       const flwTxId = params.get('transaction_id')
       const flwStatus = params.get('status')
       if (flwTxId && flwStatus === 'successful') {
-        await finalizeFlutterwaveCheckout({ transactionId: flwTxId })
+        await finalizeFlutterwaveCheckout({ data: { transactionId: flwTxId } })
         params.delete('transaction_id')
         params.delete('status')
         window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`.replace(/\?$/, ''))
@@ -90,12 +91,12 @@ function BillingPage() {
 
   const handleUpgrade = async (planId: 'pro' | 'business') => {
     try {
-      const { url } = await startStripeCheckout({ planId, period: 'monthly' })
+      const { url } = await startStripeCheckout({ data: { planId, period: 'monthly' } })
       window.location.href = url
       return
     } catch {
       try {
-        const { url } = await startFlutterwaveCheckout({ planId, period: 'monthly' })
+        const { url } = await startFlutterwaveCheckout({ data: { planId, period: 'monthly' } })
         window.location.href = url
         return
       } catch {

@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { User, Lock, Bell, AlertTriangle, Loader2 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { tryCreateClient } from '@/lib/supabase/client'
 
 export const Route = createFileRoute('/_app/settings')({
   component: SettingsPage,
@@ -22,7 +22,21 @@ function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
   const [userEmail, setUserEmail] = useState<string | null>(null)
-  const supabase = createClient()
+  const supabase = tryCreateClient()
+
+  if (!supabase) {
+    return (
+      <div className="mx-auto max-w-2xl p-6">
+        <div className="rounded-2xl border border-[#E5E7EB] bg-white p-6">
+          <h1 className="text-xl font-bold text-[#0C0D0E] mb-2">Setup required</h1>
+          <p className="text-sm text-[#52565E]">
+            Supabase is not configured yet. Add the Supabase environment variables in Cloudflare, then redeploy.
+          </p>
+        </div>
+      </div>
+    )
+  }
+  const sb = supabase
 
   // Profile State
   const [fullName, setFullName] = useState('')
@@ -45,11 +59,11 @@ function SettingsPage() {
 
   useEffect(() => {
     async function loadData() {
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user } } = await sb.auth.getUser()
       if (user) {
         setUserId(user.id)
         setUserEmail(user.email || null)
-        const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+        const { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).single()
         if (profile) {
           setFullName(profile.full_name || '')
           const prefs = profile.notification_prefs
@@ -79,7 +93,7 @@ function SettingsPage() {
     if (!userId) return
     setIsSaving(true)
     try {
-      await supabase.from('profiles').update({ full_name: fullName }).eq('id', userId)
+      await sb.from('profiles').update({ full_name: fullName }).eq('id', userId)
     } finally {
       setIsSaving(false)
     }
@@ -90,7 +104,7 @@ function SettingsPage() {
     if (password !== confirmPassword) return alert('Passwords do not match')
     setIsSaving(true)
     try {
-      const { error } = await supabase.auth.updateUser({ password })
+      const { error } = await sb.auth.updateUser({ password })
       if (error) throw error
       alert('Password updated successfully')
       setPassword('')
@@ -106,7 +120,7 @@ function SettingsPage() {
     e.preventDefault()
     setIsSaving(true)
     try {
-      const { error } = await supabase.auth.updateUser({ email: newEmail })
+      const { error } = await sb.auth.updateUser({ email: newEmail })
       if (error) throw error
       setEmailMsg('Confirmation sent to new email. Please check your inbox.')
       setNewEmail('')
@@ -121,9 +135,9 @@ function SettingsPage() {
     if (deleteConfirm !== 'DELETE') return
     setIsDeleting(true)
     try {
-      const { error } = await supabase.rpc('delete_account')
+      const { error } = await sb.rpc('delete_account')
       if (error) throw error
-      await supabase.auth.signOut()
+      await sb.auth.signOut()
       navigate({ to: '/login' })
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : 'Failed to delete account')
@@ -135,7 +149,7 @@ function SettingsPage() {
     if (!userId) return
     setIsSaving(true)
     try {
-      await supabase
+      await sb
         .from('profiles')
         .update({ notification_prefs: notifs })
         .eq('id', userId)

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { Check, X } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { tryCreateClient } from '@/lib/supabase/client'
 import { startStripeCheckout, startFlutterwaveCheckout } from '@/lib/server/billing'
 
 interface UpgradeModalProps {
@@ -33,7 +33,8 @@ export function UpgradeModal({ isOpen, onClose, trigger, featureName }: UpgradeM
 
   useEffect(() => {
     async function loadUser() {
-      const supabase = createClient()
+      const supabase = tryCreateClient()
+      if (!supabase) return
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setUserId(user.id)
@@ -67,13 +68,13 @@ export function UpgradeModal({ isOpen, onClose, trigger, featureName }: UpgradeM
     }
 
     try {
-      const { url } = await startStripeCheckout({ planId, period: 'monthly' })
+      const { url } = await startStripeCheckout({ data: { planId, period: 'monthly' } })
       window.location.href = url
       return
     } catch (e) {
       // Fallback to Flutterwave when Stripe isn't configured/available.
       try {
-        const { url } = await startFlutterwaveCheckout({ planId, period: 'monthly' })
+        const { url } = await startFlutterwaveCheckout({ data: { planId, period: 'monthly' } })
         window.location.href = url
         return
       } catch {

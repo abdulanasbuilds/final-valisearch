@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { tryCreateClient } from '@/lib/supabase/client'
 
 export const Route = createFileRoute('/auth/callback')({
   validateSearch: (search: Record<string, unknown>) => {
@@ -14,10 +14,14 @@ export const Route = createFileRoute('/auth/callback')({
 function AuthCallback() {
   const { code } = Route.useSearch()
   const navigate = useNavigate()
-  const supabase = createClient()
+  const supabase = tryCreateClient()
 
   useEffect(() => {
     async function handleCode() {
+      if (!supabase) {
+        navigate({ to: '/login', search: { error: 'supabase_not_configured' } })
+        return
+      }
       if (!code) {
         navigate({ to: '/login', search: { error: 'auth_failed' } })
         return

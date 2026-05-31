@@ -14,6 +14,15 @@ export const submitAnalysis = createServerFn({ method: 'POST' })
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('UNAUTHORIZED')
 
+  // 1.5. Deployment sanity check (lets the app deploy without keys,
+  // but prevents users from triggering background jobs before setup).
+  const missing: string[] = []
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) missing.push('SUPABASE_SERVICE_ROLE_KEY')
+  if (!process.env.TRIGGER_PROJECT_ID) missing.push('TRIGGER_PROJECT_ID')
+  if (!process.env.TRIGGER_SECRET_KEY) missing.push('TRIGGER_SECRET_KEY')
+  if (!process.env.OPENROUTER_API_KEY) missing.push('OPENROUTER_API_KEY')
+  if (missing.length) throw new Error('SETUP_REQUIRED')
+
   // 2. Sanitize + validate
   const idea = sanitizeIdea(payload.idea)
   if (idea.length < 10) throw new Error('IDEA_TOO_SHORT')

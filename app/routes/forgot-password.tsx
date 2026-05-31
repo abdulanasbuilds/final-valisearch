@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { tryCreateClient } from '@/lib/supabase/client'
 import { Loader2, ArrowLeft, Mail } from 'lucide-react'
 
 export const Route = createFileRoute('/forgot-password')({
@@ -9,11 +9,30 @@ export const Route = createFileRoute('/forgot-password')({
 
 function ForgotPasswordPage() {
   const navigate = useNavigate()
-  const supabase = createClient()
+  const supabase = tryCreateClient()
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  if (!supabase) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+        <div className="w-full max-w-md space-y-4 bg-white p-8 shadow-sm rounded-xl border border-gray-100 text-center">
+          <h2 className="text-2xl font-bold tracking-tight text-gray-900">Setup required</h2>
+          <p className="text-sm text-gray-600">
+            Supabase is not configured yet. Please add the Supabase environment variables in Cloudflare first.
+          </p>
+          <Link
+            to="/"
+            className="inline-flex min-h-[44px] w-full items-center justify-center rounded-md bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700"
+          >
+            Back to home
+          </Link>
+        </div>
+      </div>
+    )
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
