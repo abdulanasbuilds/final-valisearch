@@ -17,7 +17,7 @@ const PLANS = [
     price: '$29',
     period: '/mo',
     benefit: '50 analyses & advanced tools',
-    variantId: import.meta.env.VITE_LS_VARIANT_PRO || '12345',
+    variantId: import.meta.env.VITE_LS_PRO_MONTHLY_ID,
   },
   {
     id: 'business',
@@ -25,7 +25,7 @@ const PLANS = [
     price: '$79',
     period: '/mo',
     benefit: '250 analyses & team access',
-    variantId: import.meta.env.VITE_LS_VARIANT_BUSINESS || '12346',
+    variantId: import.meta.env.VITE_LS_BIZ_MONTHLY_ID,
   },
   {
     id: 'enterprise',
@@ -33,7 +33,7 @@ const PLANS = [
     price: '$199',
     period: '/mo',
     benefit: 'Unlimited & custom agents',
-    variantId: import.meta.env.VITE_LS_VARIANT_ENTERPRISE || '12347',
+    variantId: import.meta.env.VITE_LS_ENT_MONTHLY_ID,
   },
 ]
 
@@ -72,6 +72,10 @@ export function UpgradeModal({ isOpen, onClose, trigger, featureName }: UpgradeM
   }
 
   const handleCheckout = (variantId: string) => {
+    if (!variantId) {
+      window.alert('Billing is not configured yet. Please contact support.')
+      return
+    }
     const storeUrl = import.meta.env.VITE_LS_STORE_URL || 'https://store.valisearch.app'
     const url = new URL(`${storeUrl}/checkout/buy/${variantId}`)
     url.searchParams.set('checkout[email]', userEmail)
@@ -118,7 +122,8 @@ export function UpgradeModal({ isOpen, onClose, trigger, featureName }: UpgradeM
                 </div>
                 <button
                   onClick={() => handleCheckout(plan.variantId)}
-                  className={`min-h-[44px] w-full rounded-lg px-4 font-semibold transition-colors ${
+                  disabled={!plan.variantId}
+                  className={`min-h-[44px] w-full rounded-lg px-4 font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                     plan.id === 'pro' 
                       ? 'bg-[#1B4FFF] text-white hover:bg-[#1640D6]' 
                       : 'bg-gray-100 text-[#0C0D0E] hover:bg-gray-200'

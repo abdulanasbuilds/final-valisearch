@@ -51,6 +51,10 @@ function BillingPage() {
   const limits = PLAN_LIMITS[plan]
 
   const handleUpgrade = (variantId: string) => {
+    if (!variantId) {
+      window.alert('Billing is not configured yet. Please contact support.')
+      return
+    }
     const storeUrl = import.meta.env.VITE_LS_STORE_URL || 'https://store.valisearch.app'
     const url = new URL(`${storeUrl}/checkout/buy/${variantId}`)
     url.searchParams.set('checkout[email]', profile?.email || '')
@@ -60,7 +64,8 @@ function BillingPage() {
 
   const handleManageBilling = () => {
     // In a real app, this would call an API to generate a customer portal URL from LemonSqueezy
-    window.open('https://store.valisearch.app/billing', '_blank')
+    const storeUrl = import.meta.env.VITE_LS_STORE_URL || 'https://store.valisearch.app'
+    window.open(`${storeUrl}/billing`, '_blank')
   }
 
   const getTrialDaysRemaining = () => {
@@ -117,14 +122,14 @@ function BillingPage() {
           <div className="space-y-3 border-t border-[#E5E7EB] pt-6">
             {plan === 'starter' ? (
               <button
-                onClick={() => handleUpgrade(import.meta.env.VITE_LS_VARIANT_PRO || '1')}
+                onClick={() => handleUpgrade(import.meta.env.VITE_LS_PRO_MONTHLY_ID)}
                 className="inline-flex min-h-[44px] w-full items-center justify-center rounded-lg bg-[#1B4FFF] px-6 text-sm font-semibold text-white transition-colors hover:bg-[#1640D6]"
               >
                 Upgrade to Pro
               </button>
             ) : isTrialActive ? (
               <button
-                onClick={() => handleUpgrade(import.meta.env.VITE_LS_VARIANT_PRO || '1')}
+                onClick={() => handleUpgrade(import.meta.env.VITE_LS_PRO_MONTHLY_ID)}
                 className="inline-flex min-h-[44px] w-full items-center justify-center rounded-lg bg-amber-500 px-6 text-sm font-semibold text-white transition-colors hover:bg-amber-600"
               >
                 Upgrade before trial ends
