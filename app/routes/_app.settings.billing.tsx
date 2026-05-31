@@ -1,7 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { createClient } from '@/lib/supabase/client'
-import { Check, ExternalLink, Zap, AlertTriangle } from 'lucide-react'
+import { Check, Zap, AlertTriangle } from 'lucide-react'
 import type { Plan } from '@/agents/types/analysis'
+import { useEffect } from 'react'
+import {
+  startStripeCheckout,
+  startFlutterwaveCheckout,
+  finalizeStripeCheckout,
+  finalizeFlutterwaveCheckout,
+} from '@/lib/server/billing'
 
 export const Route = createFileRoute('/_app/settings/billing')({
   loader: async () => {
@@ -50,22 +57,51 @@ function BillingPage() {
   const isTrialActive = profile?.is_trial_active
   const limits = PLAN_LIMITS[plan]
 
-  const handleUpgrade = (variantId: string) => {
-    if (!variantId) {
-      window.alert('Billing is not configured yet. Please contact support.')
-      return
-    }
-    const storeUrl = import.meta.env.VITE_LS_STORE_URL || 'https://store.valisearch.app'
-    const url = new URL(`${storeUrl}/checkout/buy/${variantId}`)
-    url.searchParams.set('checkout[email]', profile?.email || '')
-    url.searchParams.set('checkout[custom][user_id]', profile?.id || '')
-    window.location.href = url.toString()
-  }
+  useEffect(() => {
+    async function run() {
+      const params = new URLSearchParams(window.location.search)
 
-  const handleManageBilling = () => {
-    // In a real app, this would call an API to generate a customer portal URL from LemonSqueezy
-    const storeUrl = import.meta.env.VITE_LS_STORE_URL || 'https://store.valisearch.app'
-    window.open(`${storeUrl}/billing`, '_blank')
+      const stripeSessionId = params.get('stripe_session_id')
+      if (stripeSessionId) {
+        await finalizeStripeCheckout({ sessionId: stripeSessionId })
+        params.delete('stripe_session_id')
+        window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`.replace(/\?$/, ''))
+        window.location.reload()
+        return
+      }
+
+      const flwTxId = params.get('transaction_id')
+      const flwStatus = params.get('status')
+      if (flwTxId && flwStatus === 'successful') {
+        await finalizeFlutterwaveCheckout({ transactionId: flwTxId })
+        params.delete('transaction_id')
+        params.delete('status')
+        window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`.replace(/\?$/, ''))
+        window.location.reload()
+        return
+      }
+    }
+
+    run().catch(() => {
+      // Keep this non-technical for users
+      window.alert('Payment completed, but we could not update your plan automatically. Please contact support.')
+    })
+  }, [])
+
+  const handleUpgrade = async (planId: 'pro' | 'business') => {
+    try {
+      const { url } = await startStripeCheckout({ planId, period: 'monthly' })
+      window.location.href = url
+      return
+    } catch {
+      try {
+        const { url } = await startFlutterwaveCheckout({ planId, period: 'monthly' })
+        window.location.href = url
+        return
+      } catch {
+        window.alert('Payments are not configured yet. Please contact support.')
+      }
+    }
   }
 
   const getTrialDaysRemaining = () => {
@@ -122,30 +158,22 @@ function BillingPage() {
           <div className="space-y-3 border-t border-[#E5E7EB] pt-6">
             {plan === 'starter' ? (
               <button
-                onClick={() => handleUpgrade(import.meta.env.VITE_LS_PRO_MONTHLY_ID)}
+                onClick={() => handleUpgrade('pro')}
                 className="inline-flex min-h-[44px] w-full items-center justify-center rounded-lg bg-[#1B4FFF] px-6 text-sm font-semibold text-white transition-colors hover:bg-[#1640D6]"
               >
                 Upgrade to Pro
               </button>
             ) : isTrialActive ? (
               <button
-                onClick={() => handleUpgrade(import.meta.env.VITE_LS_PRO_MONTHLY_ID)}
+                onClick={() => handleUpgrade('pro')}
                 className="inline-flex min-h-[44px] w-full items-center justify-center rounded-lg bg-amber-500 px-6 text-sm font-semibold text-white transition-colors hover:bg-amber-600"
               >
                 Upgrade before trial ends
               </button>
             ) : (
-              <>
-                <button
-                  onClick={handleManageBilling}
-                  className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg border border-[#E5E7EB] bg-white px-6 text-sm font-semibold text-[#0C0D0E] transition-colors hover:bg-gray-50"
-                >
-                  Manage billing <ExternalLink className="h-4 w-4" />
-                </button>
-                <button className="w-full text-center text-sm font-semibold text-red-600 hover:text-red-700 mt-2">
-                  Cancel plan
-                </button>
-              </>
+              <p className="text-sm text-[#52565E]">
+                Need to change or cancel your plan? Please contact support.
+              </p>
             )}
           </div>
         </div>

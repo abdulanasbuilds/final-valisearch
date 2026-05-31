@@ -123,30 +123,6 @@ export const PLANS: PlanDefinition[] = [
   },
 ]
 
-// ============================================================
-// LEMON SQUEEZY VARIANT IDS
-// ============================================================
-
-const LS_VARIANTS: Record<PlanId, Record<BillingPeriod, string>> = {
-  starter: { monthly: '', annual: '' },
-  pro: {
-    monthly: import.meta.env.VITE_LS_VARIANT_PRO_MONTHLY || '',
-    annual: import.meta.env.VITE_LS_VARIANT_PRO_ANNUAL || '',
-  },
-  business: {
-    monthly: import.meta.env.VITE_LS_VARIANT_BUSINESS_MONTHLY || '',
-    annual: import.meta.env.VITE_LS_VARIANT_BUSINESS_ANNUAL || '',
-  },
-  enterprise: {
-    monthly: import.meta.env.VITE_LS_VARIANT_ENTERPRISE_MONTHLY || '',
-    annual: import.meta.env.VITE_LS_VARIANT_ENTERPRISE_ANNUAL || '',
-  },
-}
-
-export function getLSVariantId(planId: PlanId, period: BillingPeriod): string {
-  return LS_VARIANTS[planId]?.[period] ?? ''
-}
-
 export function getAnnualSavings(planId: PlanId): number {
   const plan = PLANS.find((p) => p.id === planId)
   if (!plan || plan.monthlyPrice === 0) return 0

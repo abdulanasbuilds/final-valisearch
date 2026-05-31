@@ -52,7 +52,8 @@ function TermsPage() {
               <li>Each analysis consumes credits based on analysis type (Quick = 1, Full = 2)</li>
               <li>Credits are reset monthly according to your plan</li>
               <li>Unused credits do not roll over</li>
-              <li>Payments are processed by LemonSqueezy. Refund requests are handled per LemonSqueezy's refund policy</li>
+              <li>Payments are processed by Stripe and/or Flutterwave</li>
+              <li>Refund requests are handled according to the payment provider’s refund policy and applicable law</li>
             </ul>
           </section>
 

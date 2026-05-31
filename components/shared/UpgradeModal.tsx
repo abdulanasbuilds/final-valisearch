@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { Check, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { startStripeCheckout, startFlutterwaveCheckout } from '@/lib/server/billing'
 
 interface UpgradeModalProps {
   isOpen: boolean
@@ -17,7 +18,6 @@ const PLANS = [
     price: '$29',
     period: '/mo',
     benefit: '50 analyses & advanced tools',
-    variantId: import.meta.env.VITE_LS_PRO_MONTHLY_ID,
   },
   {
     id: 'business',
@@ -25,20 +25,10 @@ const PLANS = [
     price: '$79',
     period: '/mo',
     benefit: '250 analyses & team access',
-    variantId: import.meta.env.VITE_LS_BIZ_MONTHLY_ID,
-  },
-  {
-    id: 'enterprise',
-    name: 'Enterprise',
-    price: '$199',
-    period: '/mo',
-    benefit: 'Unlimited & custom agents',
-    variantId: import.meta.env.VITE_LS_ENT_MONTHLY_ID,
   },
 ]
 
 export function UpgradeModal({ isOpen, onClose, trigger, featureName }: UpgradeModalProps) {
-  const [userEmail, setUserEmail] = useState<string>('')
   const [userId, setUserId] = useState<string>('')
 
   useEffect(() => {
@@ -47,7 +37,6 @@ export function UpgradeModal({ isOpen, onClose, trigger, featureName }: UpgradeM
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setUserId(user.id)
-        setUserEmail(user.email || '')
       }
     }
     if (isOpen) loadUser()
@@ -71,16 +60,26 @@ export function UpgradeModal({ isOpen, onClose, trigger, featureName }: UpgradeM
     }
   }
 
-  const handleCheckout = (variantId: string) => {
-    if (!variantId) {
-      window.alert('Billing is not configured yet. Please contact support.')
+  const handleCheckout = async (planId: 'pro' | 'business') => {
+    if (!userId) {
+      window.alert('Please sign in again and retry.')
       return
     }
-    const storeUrl = import.meta.env.VITE_LS_STORE_URL || 'https://store.valisearch.app'
-    const url = new URL(`${storeUrl}/checkout/buy/${variantId}`)
-    url.searchParams.set('checkout[email]', userEmail)
-    url.searchParams.set('checkout[custom][user_id]', userId)
-    window.location.href = url.toString()
+
+    try {
+      const { url } = await startStripeCheckout({ planId, period: 'monthly' })
+      window.location.href = url
+      return
+    } catch (e) {
+      // Fallback to Flutterwave when Stripe isn't configured/available.
+      try {
+        const { url } = await startFlutterwaveCheckout({ planId, period: 'monthly' })
+        window.location.href = url
+        return
+      } catch {
+        window.alert('Payments are not configured yet. Please contact support.')
+      }
+    }
   }
 
   return (
@@ -108,7 +107,7 @@ export function UpgradeModal({ isOpen, onClose, trigger, featureName }: UpgradeM
             </Dialog.Description>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2">
             {PLANS.map((plan) => (
               <div key={plan.id} className="flex flex-col rounded-xl border border-[#E5E7EB] p-5 shadow-sm transition-shadow hover:shadow-md">
                 <h4 className="font-bold text-[#0C0D0E]">{plan.name}</h4>
@@ -121,8 +120,7 @@ export function UpgradeModal({ isOpen, onClose, trigger, featureName }: UpgradeM
                   <span>{plan.benefit}</span>
                 </div>
                 <button
-                  onClick={() => handleCheckout(plan.variantId)}
-                  disabled={!plan.variantId}
+                  onClick={() => handleCheckout(plan.id as 'pro' | 'business')}
                   className={`min-h-[44px] w-full rounded-lg px-4 font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                     plan.id === 'pro' 
                       ? 'bg-[#1B4FFF] text-white hover:bg-[#1640D6]' 

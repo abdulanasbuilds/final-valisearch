@@ -13,12 +13,12 @@ export const Route = createFileRoute('/pricing')({
 // ============================================================
 const FAQ_ITEMS = [
   {
-    q: 'How does the 7-day free trial work?',
-    a: 'When you sign up for any paid plan, you immediately get full Pro access for 7 days at no charge. We call this a "reverse trial" — you get the full product first, then decide. No credit card required to start.',
+    q: 'Can I start for free?',
+    a: 'Yes. The Starter plan is free and lets you run a few analyses before you upgrade.',
   },
   {
-    q: 'What happens when my trial ends?',
-    a: "If you don't upgrade before your trial ends, your account automatically downgrades to the Starter plan — 3 analyses and 6 credits per month. No surprise charges. Your existing analysis reports remain accessible.",
+    q: 'Can I cancel anytime?',
+    a: "Yes. You can cancel anytime. If you need help, contact support and we'll assist you.",
   },
   {
     q: 'What counts as one analysis?',
@@ -54,26 +54,22 @@ type FeatureRow = {
   starter: string | boolean
   pro: string | boolean
   business: string | boolean
-  enterprise: string | boolean
 }
 
 const FEATURE_TABLE: FeatureRow[] = [
-  { label: 'Analyses per month', starter: '3', pro: '50', business: '250', enterprise: 'Unlimited' },
-  { label: 'AI credits', starter: '6', pro: '100', business: '500', enterprise: 'Unlimited' },
-  { label: 'AI model quality', starter: 'Gemini 2.5 Flash', pro: 'Claude Sonnet', business: 'Claude Sonnet', enterprise: 'Claude Sonnet' },
-  { label: 'Core 12-agent analysis', starter: true, pro: true, business: true, enterprise: true },
-  { label: 'Validation score & verdict', starter: true, pro: true, business: true, enterprise: true },
-  { label: 'Real-time web research', starter: false, pro: true, business: true, enterprise: true },
-  { label: 'AI Co-founder chat', starter: false, pro: true, business: true, enterprise: true },
-  { label: 'PDF export', starter: false, pro: true, business: true, enterprise: true },
-  { label: 'DOCX export', starter: false, pro: true, business: true, enterprise: true },
-  { label: 'Flow builder', starter: false, pro: true, business: true, enterprise: true },
-  { label: 'Team workspace', starter: false, pro: false, business: '5 members', enterprise: 'Unlimited' },
-  { label: 'API access', starter: false, pro: false, business: true, enterprise: true },
-  { label: 'White-label reports', starter: false, pro: false, business: true, enterprise: true },
-  { label: 'Custom AI agents', starter: false, pro: false, business: false, enterprise: true },
-  { label: 'SSO / SAML', starter: false, pro: false, business: false, enterprise: true },
-  { label: 'SLA & uptime guarantee', starter: false, pro: false, business: false, enterprise: true },
+  { label: 'Analyses per month', starter: '3', pro: '50', business: '250' },
+  { label: 'AI credits', starter: '6', pro: '100', business: '500' },
+  { label: 'AI model quality', starter: 'Gemini 2.5 Flash', pro: 'Claude Sonnet', business: 'Claude Sonnet' },
+  { label: 'Core 12-agent analysis', starter: true, pro: true, business: true },
+  { label: 'Validation score & verdict', starter: true, pro: true, business: true },
+  { label: 'Real-time web research', starter: false, pro: true, business: true },
+  { label: 'AI Co-founder chat', starter: false, pro: true, business: true },
+  { label: 'PDF export', starter: false, pro: true, business: true },
+  { label: 'DOCX export', starter: false, pro: true, business: true },
+  { label: 'Flow builder', starter: false, pro: true, business: true },
+  { label: 'Team workspace', starter: false, pro: false, business: '5 members' },
+  { label: 'API access', starter: false, pro: false, business: true },
+  { label: 'White-label reports', starter: false, pro: false, business: true },
 ]
 
 function FeatureValue({ value }: { value: string | boolean }) {
@@ -160,8 +156,8 @@ function PricingPage() {
       {/* ==================== PLAN CARDS ==================== */}
       <section className="pb-16 px-4 sm:px-6">
         <div className="mx-auto max-w-6xl">
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {PLANS.map((plan) => {
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {PLANS.filter((p) => p.id !== 'enterprise').map((plan) => {
               const price = getPlanPrice(plan, billingPeriod)
               const savings = getAnnualSavings(plan.id)
               const isHighlighted = plan.badge === 'Most Popular'
@@ -199,8 +195,6 @@ function PricingPage() {
                     {price > 0 && (
                       <p className="mt-1 text-xs text-[#9CA3AF]">
                         {billingPeriod === 'annual' ? 'Billed annually' : 'Billed monthly'}
-                        {' · '}
-                        <span className="font-semibold text-amber-600">7-day free trial</span>
                       </p>
                     )}
                   </div>
@@ -276,7 +270,7 @@ function PricingPage() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-4 text-left font-semibold text-[#52565E] w-1/3">Feature</th>
-                  {PLANS.map((plan) => (
+                  {PLANS.filter((p) => p.id !== 'enterprise').map((plan) => (
                     <th
                       key={plan.id}
                       className={`px-4 py-4 text-center font-black text-sm ${plan.badge ? 'text-[#1B4FFF]' : 'text-[#0C0D0E]'}`}
@@ -293,7 +287,6 @@ function PricingPage() {
                     <td className="px-4 py-3.5 text-center"><FeatureValue value={row.starter} /></td>
                     <td className="px-4 py-3.5 text-center bg-blue-50/30"><FeatureValue value={row.pro} /></td>
                     <td className="px-4 py-3.5 text-center"><FeatureValue value={row.business} /></td>
-                    <td className="px-4 py-3.5 text-center"><FeatureValue value={row.enterprise} /></td>
                   </tr>
                 ))}
               </tbody>
@@ -325,7 +318,7 @@ function PricingPage() {
           <h2 className="text-3xl font-black text-white sm:text-4xl">
             Start validating for free today.
           </h2>
-          <p className="mt-4 text-base text-blue-200">No credit card. No commitments. Just clarity.</p>
+          <p className="mt-4 text-base text-blue-200">No commitments. Just clarity.</p>
           <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
             <Link
               to="/register"

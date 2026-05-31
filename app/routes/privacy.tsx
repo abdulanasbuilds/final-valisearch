@@ -32,7 +32,7 @@ function PrivacyPage() {
               <li>Account information: email address and name you provide during registration</li>
               <li>Startup ideas and analysis results you submit through the platform</li>
               <li>Usage data: pages visited, features used, analysis frequency</li>
-              <li>Payment information: processed securely through LemonSqueezy (we never store card details)</li>
+              <li>Payment information: processed securely through Stripe and/or Flutterwave (we never store card details)</li>
             </ul>
           </section>
 
@@ -52,7 +52,7 @@ function PrivacyPage() {
             <ul className="list-disc pl-5 space-y-2 mt-2">
               <li>OpenRouter and Google AI — to run AI agent analysis (your ideas are sent as prompts)</li>
               <li>Supabase — for database and authentication</li>
-              <li>LemonSqueezy — for payment processing</li>
+              <li>Stripe and/or Flutterwave — for payment processing</li>
               <li>PostHog — for product analytics (anonymized)</li>
             </ul>
           </section>
